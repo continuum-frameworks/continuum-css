@@ -1,0 +1,27 @@
+{
+    "name": "continuum-css",
+    "version": "1.0.0",
+    "private": true,
+    "description": "The lightweight yet comprehensive styling framework.",
+    "author": "Michael K Macharia",
+    "license": "AGPLv3",
+    "sideEffects": false,
+    "scripts": {
+        "build": "webpack",
+        "watch": "webpack --watch",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "continuum",
+        "css",
+        "continuum-css"
+    ],
+    "devDependencies": {
+        "css-loader": "^6.10.0",
+        "style-loader": "^3.3.4",
+        "ts-loader": "^9.5.1",
+        "typescript": "^5.4.3",
+        "webpack": "^5.91.0",
+        "webpack-cli": "^5.1.4"
+    }
+}
