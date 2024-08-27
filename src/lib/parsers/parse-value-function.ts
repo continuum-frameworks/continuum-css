@@ -40,7 +40,12 @@ const parse_value_function: (value_function: string) => string = (
                     : item;
             })
             .join(";"),
-    ).replace(/(\/)(?=(?:[^'"]|'[^']*'|"[^"]*")*$)/g, " / ")}`;
+    ).replace(/(\/)(?=(?:[^'"]|'[^']*'|"[^"]*")*$)/g, " / ")}`.replace(
+        /calc\(([^)]+)\)/g,
+        (_match: string, args: string): string => {
+            return `calc(${args.replace(/(\s*[\+\-\*\/]\s*)/g, " $1 ")})`;
+        },
+    );
 };
 
 /**

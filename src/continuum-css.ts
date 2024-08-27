@@ -114,99 +114,114 @@ window.onload = (event: Event): undefined => {
         property: "",
     };
 
+    const grabbable_styles: string[] = [];
+
     const swapped_substrings: { [key: string]: string } = {};
 
     const interpreted_class_names: { [key: string]: string }[] =
-        class_names.map((class_name: string): { [key: string]: string } => {
-            let property: string,
-                value: string,
-                value_function: string,
-                at_rule: string,
-                pseudo_class: string,
-                pseudo_element: string;
+        class_names.map(
+            (class_name: string, index: number): { [key: string]: string } => {
+                let property: string,
+                    value: string,
+                    value_function: string,
+                    at_rule: string,
+                    pseudo_class: string,
+                    pseudo_element: string;
 
-            class_name = swap_substring(class_name, swapped_substrings);
+                class_name = swap_substring(class_name, swapped_substrings);
 
-            if (class_name[0] === "@") {
-                at_rule = class_name.slice(1);
-            } else {
-                [property, value] = class_name.split("=");
+                if (class_name[0] === "@") {
+                    at_rule = class_name.slice(1);
+                } else {
+                    [property, value] = class_name.split("=");
 
-                [property, at_rule] = property.includes("@")
-                    ? property
-                          .split("@")
-                          .fill(property.split("@").slice(1).join("@"), 1)
-                    : [property, at_rule];
+                    [property, pseudo_element] = property.includes("::")
+                        ? property.split("::")
+                        : [property, pseudo_element];
 
-                [property, pseudo_element] = property.includes("::")
-                    ? property.split("::")
-                    : [property, pseudo_element];
+                    [property, pseudo_class] = property.includes(":")
+                        ? property
+                              .split(":")
+                              .fill(property.split(":").slice(1).join(":"), 1)
+                        : [property, pseudo_class];
 
-                [property, pseudo_class] = property.includes(":")
-                    ? property
-                          .split(":")
-                          .fill(property.split(":").slice(1).join(":"), 1)
-                    : [property, pseudo_class];
+                    [value_function, value] = value
+                        ? value.includes("(")
+                            ? [`${value}`, undefined]
+                            : [value_function, value]
+                        : [value_function, "i631"];
+                }
 
-                [at_rule, pseudo_element] =
-                    at_rule && at_rule.includes("::")
-                        ? at_rule.split("::")
-                        : [at_rule, pseudo_element];
+                property = property
+                    ? parse_property(
+                          unswap_substring(property, swapped_substrings),
+                      )
+                    : property;
 
-                [at_rule, pseudo_class] =
-                    at_rule && at_rule.includes(":")
-                        ? at_rule.split(":")
-                        : [at_rule, pseudo_class];
+                value = value
+                    ? parse_value(unswap_substring(value, swapped_substrings))
+                    : value;
 
-                [value_function, value] = value
-                    ? value.includes("(")
-                        ? [`${value}`, undefined]
-                        : [value_function, value]
-                    : [value_function, "i631"];
-            }
+                value_function = value_function
+                    ? parse_value_function(
+                          unswap_substring(value_function, swapped_substrings),
+                      )
+                    : value_function;
 
-            property = property
-                ? parse_property(unswap_substring(property, swapped_substrings))
-                : property;
+                at_rule = at_rule
+                    ? parse_at_rule(
+                          unswap_substring(at_rule, swapped_substrings),
+                          at_rules,
+                          at_rule.slice(0, 7) === "cc-grab" ? true : false,
+                      )
+                    : at_rule;
 
-            value = value
-                ? parse_value(unswap_substring(value, swapped_substrings))
-                : value;
+                if (at_rule && at_rule.slice(0, 8) === "@cc-grab") {
+                    Array.from(
+                        document.getElementsByClassName(class_name),
+                    ).forEach((element: Element): undefined => {
+                        grabbable_styles.push(
+                            at_rule.replace(
+                                "@cc-grab",
+                                `.${updated_class_names[index]}`,
+                            ),
+                        );
 
-            value_function = value_function
-                ? parse_value_function(
-                      unswap_substring(value_function, swapped_substrings),
-                  )
-                : value_function;
+                        element.setAttribute(
+                            "cc-grabbable",
+                            `${element.getAttribute("cc-grabbable") || ""} ${
+                                updated_class_names[index]
+                            }`.trim(),
+                        );
 
-            at_rule = at_rule
-                ? parse_at_rule(
-                      unswap_substring(at_rule, swapped_substrings),
-                      at_rules,
-                  )
-                : at_rule;
+                        return;
+                    });
 
-            pseudo_class = pseudo_class
-                ? parse_pseudo_class(
-                      unswap_substring(pseudo_class, swapped_substrings),
-                  )
-                : pseudo_class;
+                    at_rule = "";
+                }
 
-            pseudo_element = pseudo_element
-                ? parse_pseudo_element(
-                      unswap_substring(pseudo_element, swapped_substrings),
-                  )
-                : pseudo_element;
+                pseudo_class = pseudo_class
+                    ? parse_pseudo_class(
+                          unswap_substring(pseudo_class, swapped_substrings),
+                      )
+                    : pseudo_class;
 
-            return {
-                property: property,
-                value: value,
-                value_function: value_function,
-                at_rule: at_rule,
-                pseudo_class: pseudo_class,
-                pseudo_element: pseudo_element,
-            };
-        });
+                pseudo_element = pseudo_element
+                    ? parse_pseudo_element(
+                          unswap_substring(pseudo_element, swapped_substrings),
+                      )
+                    : pseudo_element;
+
+                return {
+                    property: property,
+                    value: value,
+                    value_function: value_function,
+                    at_rule: at_rule,
+                    pseudo_class: pseudo_class,
+                    pseudo_element: pseudo_element,
+                };
+            },
+        );
 
     /**
      * Generate implemented styles.
@@ -250,7 +265,7 @@ window.onload = (event: Event): undefined => {
         at_rules.property,
     );
 
-    generated_styles.push(at_rules.starting_style);
+    generated_styles.push(...grabbable_styles, at_rules.starting_style);
 
     /**
      * Insert generated styles.
@@ -284,11 +299,58 @@ window.onload = (event: Event): undefined => {
     });
 
     /**
-     * Remove cc-wait attributes.
+     * Parse "cc-grab" attributes.
+     */
+
+    const cc_grabbed: Element[] = [];
+
+    document
+        .querySelectorAll("[cc-grab]")
+        .forEach((element: Element): undefined => {
+            if (element.parentElement.hasAttribute("cc-grabbable")) {
+                element.className = `${
+                    element.className
+                } ${element.parentElement.getAttribute("cc-grabbable")}`.trim();
+
+                element.parentElement
+                    .getAttribute("cc-grabbable")
+                    .split(" ")
+                    .forEach((class_name: string): undefined => {
+                        element.parentElement.classList.toggle(class_name);
+
+                        return;
+                    });
+
+                return;
+            }
+
+            element.className = `${element.className} ${Array.from(
+                element.parentElement.classList,
+            ).join(" ")}`.trim();
+
+            cc_grabbed.includes(element.parentElement)
+                ? ""
+                : cc_grabbed.push(element.parentElement);
+
+            return;
+        });
+
+    cc_grabbed.forEach((element: Element): undefined => {
+        element.outerHTML = element.innerHTML;
+
+        return;
+    });
+
+    /**
+     * Remove "cc-wait", "cc-grab", and "cc-grabbable" attributes.
      */
 
     document.querySelectorAll("*").forEach((element: Element): undefined => {
         element.removeAttribute("cc-wait");
+
+        element.removeAttribute("cc-grab");
+
+        element.removeAttribute("cc-grabbable");
 
         return;
     });

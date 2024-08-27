@@ -10,11 +10,11 @@ npm install
 
 ### Versions
 
--   1.0.0
+-   See CHANGELOG.md
 
 ### Authors
 
--   Michael K Macharia
+-   [Michael K Macharia](https://github.com/michaelkmacharia)
 
 ### Licenses
 
